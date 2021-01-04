@@ -8,7 +8,7 @@
 [parameter(Mandatory=$true)] [string] $scriptPath
 )
 
-function CreateBucket{
+function CreateBucketIfNotExists{
     If((gsutil ls) -notcontains $bucket)
     {
         Write-Host "creating $bucket"
@@ -21,23 +21,29 @@ function CreateBucket{
 }
 
 function CopyFileToBucket{
-    [parameter(Mandatory=$true)] [string] $inputPath
+    Param(
+        [parameter(Mandatory=$true)] [string] $inputPath
+    )
 
     $filesInBucket = gsutil ls $bucket
 
-    $fileName = Split-Path $inputPath -leaf
-    $gsFile = "$bucket$$fileName"
-    If($filesInBucket -notcontains $gsFile)
-    {
-        Write-Host "copying $inputPath to $bucket"
-        gsutil cp $inputPath $bucket
-    }
+    $gsFile = GetGSPath -inputPath $inputPath
+
+    Write-Host "copying $inputPath to $bucket"
+    gsutil cp $inputPath $bucket
 }
 
 function GetGSPath{
+    Param(
+        [parameter(Mandatory=$true)] [string] $inputPath
+    )
+
+    Write-Host "$gsFile"
+    $fileName = Split-Path $inputPath -leaf
+    return "$($bucket)$($fileName)"
 }
 
-function CreateCluster{
+function CreateClusterIfNotExists{
     $clusters = gcloud dataproc clusters list `
     --project=$project_id `
     --region=$region
@@ -53,17 +59,20 @@ function CreateCluster{
 }
 
 function DeleteCluster{
+    Write-Host "deleting cluster $cluster"
     gcloud dataproc clusters delete $cluster `
     --project=$project_id `
-    --region=$region
+    --region=$region `
+    --quiet
 }
 
 function SendJob{
-
+    $gsFile = GetGSPath -inputPath $trainDatasetLocalPath
+    Write-Host "sending Job $scriptPath with traindataset=$gsFile to cluster $cluster"
     gcloud dataproc jobs submit pyspark $scriptPath `
         --cluster=$cluster `
         --region=$region `
-        -- $bucket/train.csv/
+        -- $gsFile
 }
 
 
@@ -76,12 +85,11 @@ If($bucket[-1] -ne "/")
     $bucket = "$bucket/"
 }
 
-# create 
 
-CreateBucket
+CreateBucketIfNotExists
 CopyFileToBucket -inputPath $trainDatasetLocalPath
 CopyFileToBucket -inputPath $testDatasetLocalPath
-#CreateCluster
+CreateClusterIfNotExists
 SendJob
 DeleteCluster
 
