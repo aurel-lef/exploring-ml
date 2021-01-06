@@ -63,23 +63,6 @@ function CreateClusterIfNotExists{
         --worker-boot-disk-size 30GB `
         --max-idle=30m `
         --max-age=1d
-
-        #gcloud dataproc clusters create $cluster `
-        #--project=$project_id `
-        #--region=$region `
-        #--image-version=preview `
-        #--single-node `
-        #--max-idle=30m `
-        #--max-age=1d
-
-        # gcloud dataproc clusters create basil \
-    #--zone us-central1-a \
-    #--master-machine-type n1-standard-1 \
-    #--master-boot-disk-size 10 \
-    #--num-workers 2 \
-    #--worker-machine-type n1-standard-1 \
-    #--worker-boot-disk-size 10 \
-    #--project project_id
     }
 }
 
