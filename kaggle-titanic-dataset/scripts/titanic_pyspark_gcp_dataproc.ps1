@@ -5,7 +5,8 @@
 [parameter(Mandatory=$true)] [string] $trainDatasetLocalPath,
 [parameter(Mandatory=$true)] [string] $testDatasetLocalPath,
 [parameter(Mandatory=$true)] [string] $cluster,
-[parameter(Mandatory=$true)] [string] $scriptPath
+[parameter(Mandatory=$true)] [string] $scriptPath,
+[parameter()] [string[]] $modulePaths
 )
 
 function CreateBucketIfNotExists{
@@ -54,9 +55,22 @@ function CreateClusterIfNotExists{
         gcloud dataproc clusters create $cluster `
         --project=$project_id `
         --region=$region `
-        --single-node `
+        --image-version=preview `
+        --master-machine-type n1-standard-4 `
+        --master-boot-disk-size 30GB `
+        --num-workers 2 `
+        --worker-machine-type n1-standard-4 `
+        --worker-boot-disk-size 30GB `
         --max-idle=30m `
         --max-age=1d
+
+        #gcloud dataproc clusters create $cluster `
+        #--project=$project_id `
+        #--region=$region `
+        #--image-version=preview `
+        #--single-node `
+        #--max-idle=30m `
+        #--max-age=1d
 
         # gcloud dataproc clusters create basil \
     #--zone us-central1-a \
@@ -78,12 +92,14 @@ function DeleteCluster{
 }
 
 function SendJob{
-    $gsFile = GetGSPath -inputPath $trainDatasetLocalPath
-    Write-Host "sending Job $scriptPath with traindataset=$gsFile to cluster $cluster"
+    $gsTrainDataset = GetGSPath -inputPath $trainDatasetLocalPath
+    $gsTestDataset = GetGSPath -inputPath $testDatasetLocalPath
+    Write-Host "sending Job $scriptPath with traindataset=$gsTrainDataset to cluster $cluster"
     gcloud dataproc jobs submit pyspark $scriptPath `
         --cluster=$cluster `
         --region=$region `
-        -- $gsFile
+        --py-files $modulePaths `
+        -- $gsTrainDataset $gsTestDataset "$($bucket)pyspark-gcp-dataproc-prediction"
 }
 
 
