@@ -164,6 +164,16 @@ from pyspark.ml.classification import GBTClassifier, RandomForestClassifier, Mul
 from pyspark.ml.tuning import CrossValidator
 from pyspark.ml.evaluation import BinaryClassificationEvaluator, MulticlassClassificationEvaluator
 
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() == 'true':
+        return True
+    elif v.lower() == 'false':
+        return False
+    else:
+        raise Exception('Boolean value expected.')
+        
 class VotingClassifier(Estimator):
     
     def fit(self, dataset, params=None):
@@ -214,9 +224,43 @@ class VotingClassifier(Estimator):
             layers=layers
         )
         
+        mlp_paramGrid = (
+            ParamGridBuilder()
+            .addGrid(mlp.layers, [[23, 100, 2], [23, 50, 50, 2], [23, 50, 50, 50, 2], [23, 50, 50, 50, 50, 2], [23, 100, 100, 2]])
+            .addGrid(mlp.maxIter, [50, 100, 150, 200])
+            .addGrid(mlp.stepSize, [0.01, 0.03, 0.05, 0.1, 0.3])
+            .addGrid(mlp.solver, ['l-bfgs', 'gd'])
+            .addGrid(mlp.blockSize, [32, 64, 128])
+            .build()
+        )
+
+        rf_paramGrid = (
+            ParamGridBuilder()
+            .addGrid(rf.numTrees, [10, 15, 20, 25, 30, 35, 50, 100, 120, 150])
+            .addGrid(rf.maxDepth, list(range(3,10)))
+            .addGrid(rf.featureSubsetStrategy, ['all', 'sqrt', '0.25', '0.5', '0.75', '1.0'])
+            .build()
+        )
+
+        gbt_paramGrid = (
+            ParamGridBuilder()
+            .addGrid(gbt.stepSize, [0.01, 0.03, 0.05, 0.1, 0.3])
+            .addGrid(gbt.maxDepth, list(range(3,10)))
+            .addGrid(gbt.maxIter, [5, 10, 15, 20, 25, 30, 35, 50])
+            .build()
+        )
+        
+        paramGrids = [ParamGridBuilder().build()]*3 # no parameter tuning
+        if (params and ("tuning" in params.keys()) and str2bool(params["tuning"])):
+            paramGrids = [mlp_paramGrid, rf_paramGrid, gbt_paramGrid]
+        
         trainedModels = dict()
-        for classifier, classifier_name in zip( [mlp, rf, gbt], ["mlp", "rf", "gbt"]):
-            
+        for classifier, classifier_name, paramGrid in zip( 
+                [mlp, rf, gbt], 
+                ["mlp", "rf", "gbt"],
+                paramGrids
+                ):
+
             clf = Pipeline(
                 stages = [
                 preprocess,
@@ -229,20 +273,11 @@ class VotingClassifier(Estimator):
             # the only way to get an accuracy evaluator seems to use MulticlassClassificationEvaluator
             evaluator = MulticlassClassificationEvaluator(labelCol="Survived", metricName="accuracy")
         
-            # no paramter tuning for now, will perform it later on a gcp hadoop cluster    
-            paramGrid = ParamGridBuilder().build()
-        
-            # example of parameter tuning for GBT:
-            # paramGrid = ParamGridBuilder()
-            #   .addGrid(gbt.stepSize, [0.001, 0.03, 0.1, 0.3])
-            #   .addGrid(gbt.maxDepth, list(range(3,10))
-            #   .build()
-        
             cv = CrossValidator(
                 estimator=clf, 
                 estimatorParamMaps=paramGrid, 
                 evaluator=evaluator, 
-                numFolds=3, 
+                numFolds=6, 
                 parallelism=2)
         
             cv_model = cv.fit(dataset)

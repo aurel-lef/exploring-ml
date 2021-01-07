@@ -58,7 +58,7 @@ function CreateClusterIfNotExists{
         --image-version=preview `
         --master-machine-type n1-standard-4 `
         --master-boot-disk-size 30GB `
-        --num-workers 2 `
+        --num-workers 4 `
         --worker-machine-type n1-standard-4 `
         --worker-boot-disk-size 30GB `
         --max-idle=30m `
@@ -82,7 +82,7 @@ function SendJob{
         --cluster=$cluster `
         --region=$region `
         --py-files $modulePaths `
-        -- $gsTrainDataset $gsTestDataset "$($bucket)pyspark-gcp-dataproc-prediction"
+        -- $gsTrainDataset $gsTestDataset "$($bucket)pyspark-gcp-dataproc-prediction" $true
 }
 
 

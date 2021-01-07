@@ -2,25 +2,22 @@ from titanicVotingClassifier import IOHandler, FeatureExtractor, VotingClassifie
 from pyspark.sql import SparkSession
 import sys
 
-print("python version = {}".format(sys.version))
-
-if len(sys.argv) != 4:
-  raise Exception("arguments <trainDatasetPath>, <testDatasetPath>, <predictionSubmissionPath> are required")
+if len(sys.argv) != 5:
+  raise Exception("""arguments <trainDatasetPath>, 
+                  <testDatasetPath>, 
+                  <predictionSubmissionPath>,
+                  <tuning> are required""")
 
 trainDatasetPath = sys.argv[1]
 testDatasetPath = sys.argv[2]
 predictionSubmissionPath = sys.argv[3]
+tuning = sys.argv[4]
 
 spark = SparkSession.builder \
         .appName("titanic-votingclassifier-gcp-dataproc") \
         .getOrCreate()
-
-def quiet_logs(spark):
-    logger = spark.sparkContext._jvm.org.apache.log4j
-    logger.LogManager.getLogger("org"). setLevel( logger.Level.ERROR )
-    logger.LogManager.getLogger("akka").setLevel( logger.Level.ERROR )
-    
-quiet_logs(spark)
+        
+spark.sparkContext.setLogLevel("WARN")
 
 # data acquisition
 train_df = IOHandler.read(spark, trainDatasetPath)
@@ -42,7 +39,7 @@ test.show(5)
 
 # model training
 print("ensemble classifier training:")
-votingClf = VotingClassifier().fit(train)
+votingClf = VotingClassifier().fit(train, {"tuning": tuning})
 print("prediction with majority vote of ensemble {mlp, rf, gbt}:")
 final_prediction = votingClf.transform(test).cache()
 final_prediction.show()
