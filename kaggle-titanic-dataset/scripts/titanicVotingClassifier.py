@@ -240,9 +240,9 @@ class VotingClassifier(Estimator):
         
         mlp_paramGrid = (
             ParamGridBuilder()
-            .addGrid(mlp.layers, [[23, 100, 2], [23, 50, 50, 2], [23, 50, 50, 50, 2]])
-            # .addGrid(mlp.maxIter, [100, 150, 200, 300])
-            .addGrid(mlp.stepSize, [0.01, 0.03, 0.05, 0.1, 0.3])
+            # .addGrid(mlp.layers, [[23, 100, 2], [23, 50, 50, 2], [23, 50, 50, 50, 2]])
+            .addGrid(mlp.maxIter, [100, 150, 200])
+            .addGrid(mlp.stepSize, [0.01, 0.03, 0.05])
             #.addGrid(mlp.solver, ['l-bfgs', 'gd'])
             # .addGrid(mlp.blockSize, [32, 64, 128])
             .build()
@@ -250,7 +250,7 @@ class VotingClassifier(Estimator):
 
         rf_paramGrid = (
             ParamGridBuilder()
-            .addGrid(rf.numTrees, [20, 50, 100, 200])
+            # .addGrid(rf.numTrees, [20, 50, 100, 200])
             .addGrid(rf.maxDepth, list(range(3,10)))
             .addGrid(rf.featureSubsetStrategy, ['0.25', '0.5', '0.75', '1.0'])
             .build()
@@ -260,7 +260,7 @@ class VotingClassifier(Estimator):
             ParamGridBuilder()
             .addGrid(gbt.stepSize, [0.05, 0.1, 0.3])
             .addGrid(gbt.maxDepth, list(range(3,10)))
-            .addGrid(gbt.maxIter, [20, 50, 100, 150, 200, 300])
+            # .addGrid(gbt.maxIter, [20, 50, 100, 150, 200, 300])
             .build()
         )
         

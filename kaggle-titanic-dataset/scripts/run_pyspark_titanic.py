@@ -15,9 +15,6 @@ tuning = sys.argv[4]
 
 spark = ( SparkSession.builder
          .appName("titanic-votingclassifier-gcp-dataproc")
-        # # basic default partitionning
-        # # intending to use 5 workers of 4CPUS, target 3 partition by CPU
-        # .config("spark.sql.shuffle.partitions", 60)
         .getOrCreate() )
         
 spark.sparkContext.setLogLevel("ERROR")
@@ -33,7 +30,7 @@ test_df.show(5)
 
 # feature extraction
 featureExtractor = FeatureExtractor().fit(train_df)
-train = featureExtractor.transform(train_df).repartition(1000).cache()
+train = featureExtractor.transform(train_df).repartition(200).cache()
 test = featureExtractor.transform(test_df).cache()
 train_df.unpersist()
 test_df.unpersist()
