@@ -1,11 +1,12 @@
 ﻿Param(
-[parameter(Mandatory=$true)] [string] $project_id,
+[parameter(Mandatory=$true)] [string] $projectId,
 [parameter(Mandatory=$true)] [string] $region,
 [parameter(Mandatory=$true)] [string] $bucket,
 [parameter(Mandatory=$true)] [string] $trainDatasetLocalPath,
 [parameter(Mandatory=$true)] [string] $testDatasetLocalPath,
 [parameter(Mandatory=$true)] [string] $cluster,
 [parameter(Mandatory=$true)] [string] $scriptPath,
+[parameter(Mandatory=$true)] [bool] $hyperparameterTuning,
 [parameter()] [string[]] $modulePaths
 )
 
@@ -13,7 +14,7 @@ function CreateBucketIfNotExists{
     If((gsutil ls) -notcontains $bucket)
     {
         Write-Host "creating $bucket"
-        gsutil mb -p $project_id -l $region $bucket
+        gsutil mb -p $projectId -l $region $bucket
     }
     else
     {
@@ -46,21 +47,22 @@ function GetGSPath{
 
 function CreateClusterIfNotExists{
     $clusters = gcloud dataproc clusters list `
-    --project=$project_id `
+    --project=$projectId `
     --region=$region
 
     if($clusters -notcontains $cluster)
     {
         Write-Host "creating cluster $cluster"
         gcloud dataproc clusters create $cluster `
-        --project=$project_id `
+        --project=$projectId `
         --region=$region `
         --image-version=preview `
         --master-machine-type n1-standard-4 `
-        --master-boot-disk-size 30GB `
-        --num-workers 4 `
+        --master-boot-disk-size 1TB `
+        --num-workers 5 `
         --worker-machine-type n1-standard-4 `
-        --worker-boot-disk-size 30GB `
+        --worker-boot-disk-size 500GB `
+        --enable-component-gateway `
         --max-idle=30m `
         --max-age=1d
     }
@@ -69,7 +71,7 @@ function CreateClusterIfNotExists{
 function DeleteCluster{
     Write-Host "deleting cluster $cluster"
     gcloud dataproc clusters delete $cluster `
-    --project=$project_id `
+    --project=$projectId `
     --region=$region `
     --quiet
 }
@@ -82,12 +84,24 @@ function SendJob{
         --cluster=$cluster `
         --region=$region `
         --py-files $modulePaths `
-        -- $gsTrainDataset $gsTestDataset "$($bucket)pyspark-gcp-dataproc-prediction" $true
+        -- $gsTrainDataset $gsTestDataset "$($bucket)pyspark-gcp-dataproc-prediction" $hyperparameterTuning
 }
 
+function CreateProject{
+    $projectIds = gcloud projects list
+    if($projectIds -notcontains $projectId)
+    {
+        Write-Host "creating project $projectId"
+        gcloud projects create $projectId        gcloud config set project $projectId
+        gcloud services enable storage-api.googleapis.com
+        gcloud services enable dataproc.googleapis.com
+        gcloud services enable compute.googleapis.com
+    }
+    else{
+        Write-Host "project $projectId already exists"
+    }
+}
 
-
-# add also project creation and api enabling
 
 # add trailing "/" in the bucket name
 If($bucket[-1] -ne "/")
@@ -95,11 +109,12 @@ If($bucket[-1] -ne "/")
     $bucket = "$bucket/"
 }
 
-
+#CreateProject
 CreateBucketIfNotExists
 CopyFileToBucket -inputPath $trainDatasetLocalPath
 CopyFileToBucket -inputPath $testDatasetLocalPath
 CreateClusterIfNotExists
 SendJob
 DeleteCluster
+# keep project
 

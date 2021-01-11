@@ -26,7 +26,7 @@ class IOHandler:
 
 import re
 from pyspark.ml.feature import OneHotEncoder, StringIndexer, StandardScaler, VectorAssembler, Imputer
-from pyspark.ml import Pipeline, Transformer, Estimator, Model
+from pyspark.ml import Pipeline, Transformer, Estimator, Model, PipelineModel
 from pyspark.sql.types import IntegerType, DoubleType, StringType
 from pyspark.ml.regression import LinearRegression
 from pyspark.ml.linalg import Vectors
@@ -158,7 +158,20 @@ class FeatureExtractor(Estimator):
                 HandleMissingAge(),
                 Imputer(inputCol = "Fare", outputCol='Fare_imputed')       
         ])
-        return extract_features.fit(dataset)
+        pipelineModel = extract_features.fit(dataset)
+        return FeatureExtractorModel(pipelineModel)
+
+class FeatureExtractorModel(PipelineModel):
+    
+    def __init__(self, pipelineModel):
+        self.pipelineModel = pipelineModel
+        
+    def transform(self, dataset, params=None):
+        keep_features = ["PassengerId", "Survived", "Pclass_encoded", "Title", "Sex_encoded", 
+                 "Age_imputed", "Fare_imputed", "Embarked", "Accompanied"]
+        return ( self.pipelineModel.transform(dataset)
+                .transform(lambda df: df.select([col for col in df.columns if col in keep_features]))
+        )
 
 from pyspark.ml.classification import GBTClassifier, RandomForestClassifier, MultilayerPerceptronClassifier
 from pyspark.ml.tuning import CrossValidator
@@ -221,43 +234,44 @@ class VotingClassifier(Estimator):
         mlp = MultilayerPerceptronClassifier(
             featuresCol='features',
             labelCol = "Survived",
+            solver = 'gd',
             layers=layers
         )
         
         mlp_paramGrid = (
             ParamGridBuilder()
-            .addGrid(mlp.layers, [[23, 100, 2], [23, 50, 50, 2], [23, 50, 50, 50, 2], [23, 50, 50, 50, 50, 2], [23, 100, 100, 2]])
-            .addGrid(mlp.maxIter, [50, 100, 150, 200])
+            .addGrid(mlp.layers, [[23, 100, 2], [23, 50, 50, 2], [23, 50, 50, 50, 2]])
+            # .addGrid(mlp.maxIter, [100, 150, 200, 300])
             .addGrid(mlp.stepSize, [0.01, 0.03, 0.05, 0.1, 0.3])
-            .addGrid(mlp.solver, ['l-bfgs', 'gd'])
-            .addGrid(mlp.blockSize, [32, 64, 128])
+            #.addGrid(mlp.solver, ['l-bfgs', 'gd'])
+            # .addGrid(mlp.blockSize, [32, 64, 128])
             .build()
         )
 
         rf_paramGrid = (
             ParamGridBuilder()
-            .addGrid(rf.numTrees, [10, 15, 20, 25, 30, 35, 50, 100, 120, 150])
+            .addGrid(rf.numTrees, [20, 50, 100, 200])
             .addGrid(rf.maxDepth, list(range(3,10)))
-            .addGrid(rf.featureSubsetStrategy, ['all', 'sqrt', '0.25', '0.5', '0.75', '1.0'])
+            .addGrid(rf.featureSubsetStrategy, ['0.25', '0.5', '0.75', '1.0'])
             .build()
         )
 
         gbt_paramGrid = (
             ParamGridBuilder()
-            .addGrid(gbt.stepSize, [0.01, 0.03, 0.05, 0.1, 0.3])
+            .addGrid(gbt.stepSize, [0.05, 0.1, 0.3])
             .addGrid(gbt.maxDepth, list(range(3,10)))
-            .addGrid(gbt.maxIter, [5, 10, 15, 20, 25, 30, 35, 50])
+            .addGrid(gbt.maxIter, [20, 50, 100, 150, 200, 300])
             .build()
         )
         
         paramGrids = [ParamGridBuilder().build()]*3 # no parameter tuning
         if (params and ("tuning" in params.keys()) and str2bool(params["tuning"])):
-            paramGrids = [mlp_paramGrid, rf_paramGrid, gbt_paramGrid]
+            paramGrids = [ gbt_paramGrid, rf_paramGrid, mlp_paramGrid]
         
         trainedModels = dict()
         for classifier, classifier_name, paramGrid in zip( 
-                [mlp, rf, gbt], 
-                ["mlp", "rf", "gbt"],
+                [ gbt, rf , mlp], 
+                [ "gbt", "rf", "mlp"],
                 paramGrids
                 ):
 
@@ -277,8 +291,8 @@ class VotingClassifier(Estimator):
                 estimator=clf, 
                 estimatorParamMaps=paramGrid, 
                 evaluator=evaluator, 
-                numFolds=6, 
-                parallelism=2)
+                numFolds=3,
+                parallelism = 2)
         
             cv_model = cv.fit(dataset)
             trainedModels[classifier_name] = cv_model.bestModel

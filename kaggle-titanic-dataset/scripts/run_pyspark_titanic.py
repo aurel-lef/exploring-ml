@@ -13,15 +13,18 @@ testDatasetPath = sys.argv[2]
 predictionSubmissionPath = sys.argv[3]
 tuning = sys.argv[4]
 
-spark = SparkSession.builder \
-        .appName("titanic-votingclassifier-gcp-dataproc") \
-        .getOrCreate()
+spark = ( SparkSession.builder
+         .appName("titanic-votingclassifier-gcp-dataproc")
+        # # basic default partitionning
+        # # intending to use 5 workers of 4CPUS, target 3 partition by CPU
+        # .config("spark.sql.shuffle.partitions", 60)
+        .getOrCreate() )
         
-spark.sparkContext.setLogLevel("WARN")
+spark.sparkContext.setLogLevel("ERROR")
 
 # data acquisition
-train_df = IOHandler.read(spark, trainDatasetPath)
-test_df = IOHandler.read(spark, testDatasetPath)
+train_df = IOHandler.read(spark, trainDatasetPath).cache()
+test_df = IOHandler.read(spark, testDatasetPath).cache()
 
 print("data acquisition:")
 train_df.printSchema()
@@ -30,8 +33,10 @@ test_df.show(5)
 
 # feature extraction
 featureExtractor = FeatureExtractor().fit(train_df)
-train = featureExtractor.transform(train_df).cache()
+train = featureExtractor.transform(train_df).repartition(1000).cache()
 test = featureExtractor.transform(test_df).cache()
+train_df.unpersist()
+test_df.unpersist()
 
 print("feature engineering:")
 train.show(5)
