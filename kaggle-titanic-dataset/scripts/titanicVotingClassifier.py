@@ -240,8 +240,8 @@ class VotingClassifier(Estimator):
         
         mlp_paramGrid = (
             ParamGridBuilder()
-            # .addGrid(mlp.layers, [[23, 100, 2], [23, 50, 50, 2], [23, 50, 50, 50, 2]])
-            .addGrid(mlp.maxIter, [100, 150, 200])
+            .addGrid(mlp.layers, [[23, 100, 2], [23, 50, 50, 2]])
+            # .addGrid(mlp.maxIter, [100, 150, 200])
             .addGrid(mlp.stepSize, [0.01, 0.03, 0.05])
             #.addGrid(mlp.solver, ['l-bfgs', 'gd'])
             # .addGrid(mlp.blockSize, [32, 64, 128])

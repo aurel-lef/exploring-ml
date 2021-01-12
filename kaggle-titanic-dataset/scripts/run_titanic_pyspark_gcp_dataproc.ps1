@@ -7,4 +7,4 @@
 -cluster "pyspark-test" `
 -scriptPath .\scripts\run_pyspark_titanic.py `
 -modulePaths .\scripts\titanicVotingClassifier.py `
--hyperparameterTuning $true
+-hyperparameterTuning $true 

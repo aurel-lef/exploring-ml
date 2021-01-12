@@ -1,13 +1,16 @@
-﻿Param(
-[parameter(Mandatory=$true)] [string] $projectId,
+﻿# script creating a gcp Spark cluster and launching a majority vote classifier training 
+# prerequisite : a gcp project is already created
+
+Param(
+[parameter(Mandatory=$true)] [string] $projectId, # existing gcp project id - will fail if not existing
 [parameter(Mandatory=$true)] [string] $region,
-[parameter(Mandatory=$true)] [string] $bucket,
+[parameter(Mandatory=$true)] [string] $bucket, # gs bucket name - created if not existing
 [parameter(Mandatory=$true)] [string] $trainDatasetLocalPath,
 [parameter(Mandatory=$true)] [string] $testDatasetLocalPath,
-[parameter(Mandatory=$true)] [string] $cluster,
-[parameter(Mandatory=$true)] [string] $scriptPath,
-[parameter(Mandatory=$true)] [bool] $hyperparameterTuning,
-[parameter()] [string[]] $modulePaths
+[parameter(Mandatory=$true)] [string] $cluster, # dataproc cluster name to create - if already exists, use the existing one
+[parameter(Mandatory=$true)] [string] $scriptPath, # main python script to execute
+[parameter(Mandatory=$true)] [bool] $hyperparameterTuning, # core module of the model training
+[parameter()] [string[]] $modulePaths # flag to enable/disable hyperparameter tuning
 )
 
 function CreateBucketIfNotExists{
