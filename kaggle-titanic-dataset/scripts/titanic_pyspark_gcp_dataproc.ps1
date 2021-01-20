@@ -62,9 +62,9 @@ function CreateClusterIfNotExists{
         --image-version=preview `
         --master-machine-type n1-standard-4 `
         --master-boot-disk-size 1TB `
-        --num-workers 5 `
+        --num-workers 3 `
         --worker-machine-type n1-standard-4 `
-        --worker-boot-disk-size 500GB `
+        --worker-boot-disk-size 1TB `
         --enable-component-gateway `
         --max-idle=30m `
         --max-age=1d
@@ -95,7 +95,8 @@ function CreateProject{
     if($projectIds -notcontains $projectId)
     {
         Write-Host "creating project $projectId"
-        gcloud projects create $projectId        gcloud config set project $projectId
+        gcloud projects create $projectId
+        gcloud config set project $projectId
         gcloud services enable storage-api.googleapis.com
         gcloud services enable dataproc.googleapis.com
         gcloud services enable compute.googleapis.com
