@@ -6,7 +6,7 @@ Great opportunity to make a deep dive in feature engineering and supervised mode
 ## Notebook exploration  
 
 I performed a full analysis and model training of this dataset, with two different ML packages: 
- 
+
 1.first a [scikit-learn notebook](./notebooks/titanic-scikit-learn.ipynb)  
 2. then a full [pyspark notebook](./notebooks/titanic-pyspark.ipynb) as a preparation work for a run on gcp cloud platform
 
@@ -16,7 +16,8 @@ In both cases, I opted for a majority vote ensemble of fitted classifiers : { Ra
 
 Once I finalized the pyspark analysis, I ran it on a Spark/hadoop cluster on a google dataproc cluster.
 
-Assuming that a gcp project_id 'explore-ml-pyspark' exists with billing enabled, the below scripts will:
+The below scripts will:  
+(assuming that a gcp project_id 'explore-ml-pyspark' exists with billing enabled)  
 - deploy the train/test datasets in google storage
 - create a dataproc cluster of N workers using a preview image [Python 3.8, Miniconda3 4.9.0, Spark 3.0.1]
 - set "protective" criteria of shutdown cluster (max-idle/max-age) to avoid cloud money waste
