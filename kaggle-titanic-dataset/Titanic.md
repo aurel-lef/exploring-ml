@@ -5,7 +5,8 @@ Great opportunity to make a deep dive in feature engineering and supervised mode
 
 ## Notebook exploration  
 
-I performed a full analysis and model training of this dataset, with two different ML packages:  
+I performed a full analysis and model training of this dataset, with two different ML packages: 
+ 
 1.first a [scikit-learn notebook](./notebooks/titanic-scikit-learn.ipynb)  
 2. then a full [pyspark notebook](./notebooks/titanic-pyspark.ipynb) as a preparation work for a run on gcp cloud platform
 
