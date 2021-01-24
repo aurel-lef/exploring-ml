@@ -57,12 +57,12 @@ Once run, the gcloud deploy command displays the service url:
 
 ![build/run results](./webapi/img/gcloud_image_build_run.PNG)
 
-Suffixing this url with /docs allow us to get to the Swagger UI and play with the model.  
-In the below snapshot, we can see that the /predict route allows us to upload a csv file and run a prediction which is stored in a downloadable csv file: 
+By suffixing this url with /docs, we can get to the Swagger UI and play with the model.  
+In the below snapshot, we can see that the /predict route allows us to upload a csv file, run a prediction and download its result: 
 
 ![webapi](./webapi/img/webapi_snapshot.PNG)
 
-### ** area for improvement **
+### **area for improvement**
 
 See below the docker file used.
 
