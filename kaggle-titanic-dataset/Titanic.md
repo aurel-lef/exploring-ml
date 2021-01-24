@@ -43,7 +43,7 @@ Here I went through the deployment of a Titanic classifier (Gradient Boosted Tre
 
 I packaged the api in a docker image and ran it in gcp Cloud Run. 
 
-Here are the scripts that trigger the image compilation and run:
+Here is the script that triggers the image compilation and run:
 
 ```powershell
 gcloud builds submit --tag gcr.io/explore-ml-pyspark/app --timeout=20m
@@ -51,6 +51,13 @@ gcloud builds submit --tag gcr.io/explore-ml-pyspark/app --timeout=20m
 gcloud run deploy webapi --image gcr.io/explore-ml-pyspark/app --platform managed --region us-central1 --allow-unauthenticated
 ``` 
 
-[build/run results](./webapi/img/gcloud_image_build_run.PNG)
+Once run, the gcloud deploy command displays the service url:
+
+![build/run results](./webapi/img/gcloud_image_build_run.PNG)
+
+Suffixing this url with /docs allow us to get to the Swagger UI and play with the model.  
+In the below snapshot, we can see that the /predict route allows us to upload a csv file and run a prediction which is stored in a downloadable csv file: 
+
+![webapi](./webapi/img/webapi_snapshot.PNG)
 
 
