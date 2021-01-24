@@ -62,4 +62,33 @@ In the below snapshot, we can see that the /predict route allows us to upload a 
 
 ![webapi](./webapi/img/webapi_snapshot.PNG)
 
+### ** area for improvement **
 
+See below the docker file used.
+
+
+```docker
+FROM python:3.8-slim
+
+# Allow statements and log messages to immediately appear in the Knative logs
+ENV PYTHONUNBUFFERED True
+
+# gcc and make are needed for installing fastapi[standard]
+RUN apt-get update \
+&& apt-get install gcc -y \
+&& apt-get install make \
+&& apt-get clean
+
+#WORKDIR /app
+COPY requirements.txt /tmp/
+
+RUN pip install -r /tmp/requirements.txt
+COPY app /app
+
+# Run the web service on container startup
+CMD exec gunicorn --bind :$PORT --workers 1 --worker-class uvicorn.workers.UvicornWorker --threads 8 app.main:app
+```
+
+Clearly there is some room for optimization to build a much smaller image (and then cheaper in term of cloud usage), since lots of dependencies are only used for compilation (e.g gcc). A solution would be to separate the compilation from the run command in the docker file.
+
+Less importantly, we can also limit to the strict minimum the files uploaded to gs storage before the build with the use of a gcloudignore file.
