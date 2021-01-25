@@ -9,7 +9,6 @@ RUN apt-get update \
 && apt-get install make \
 && apt-get clean
 
-#WORKDIR /app
 COPY requirements.txt /tmp/
 
 RUN pip install -r /tmp/requirements.txt
