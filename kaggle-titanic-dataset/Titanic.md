@@ -64,7 +64,11 @@ In the below snapshot, we can see that the /predict route allows us to upload a 
 
 ### **area for improvement**
 
-See below the docker file used.
+This webapi could be optimized at least on two aspects:
+- security: by setting up an authentification protocol (oauth2)  
+- the size of the image  
+
+Regarding the second point, see below the docker file used.
 
 
 ```docker
